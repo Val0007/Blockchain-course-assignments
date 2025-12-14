@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web3.JS DEMO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-slate-800">
+  <div class="max-w-4xl mx-auto mt-12 p-6">
+    <h1 class="text-2xl font-semibold mb-6">Web3.js DEMO</h1>
+
+    <div class="border-b border-slate-200">
+      <nav class="-mb-px flex space-x-6" aria-label="Tabs" role="tablist">
+        <button id="tab-basic" class="py-3 px-1 text-sm font-medium border-b-2 border-blue-500 text-blue-600" role="tab">Basic call</button>
+        <button id="tab-send" class="py-3 px-1 text-sm font-medium border-b-2 border-transparent hover:text-slate-900" role="tab">Send ETH</button>
+        <button id="tab-read" class="py-3 px-1 text-sm font-medium border-b-2 border-transparent hover:text-slate-900" role="tab">Read Contract</button>
+        <button id="tab-write" class="py-3 px-1 text-sm font-medium border-b-2 border-transparent hover:text-slate-900" role="tab">Write Contract</button>
+      </nav>
+    </div>
+
+    <section id="panel-basic" class="mt-6" role="tabpanel">
+      <h2 class="text-lg font-medium mb-4">Basic Call - Check Balance</h2>
+      <div class="space-y-4 max-w-md">
+        <button onclick="basicCall()" class="px-4 py-2 rounded shadow bg-slate-800 text-white hover:bg-slate-700">Call</button>
+        <div>
+          <label class="block text-sm font-medium mb-2">Output</label>
+          <pre id="basic-output" class="bg-slate-50 border rounded p-3 text-sm min-h-24 overflow-auto">Click Call to check balance...</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-send" class="mt-6 hidden" role="tabpanel">
+      <h2 class="text-lg font-medium mb-4">Send ETH</h2>
+      <div class="space-y-4 max-w-md">
+        <div>
+          <label class="block text-sm font-medium mb-2">Receiver Address</label>
+          <input id="send-to" class="border rounded px-3 py-2 w-full" placeholder="0x..." value="0xE7c184FafE16a09b3497E81D736bAa30Cce439E8" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Amount (ETH)</label>
+          <input id="send-amount" class="border rounded px-3 py-2 w-full" type="number" step="0.01" value="1" />
+        </div>
+        <button onclick="sendEth()" class="px-4 py-2 rounded shadow bg-slate-800 text-white hover:bg-slate-700">Send</button>
+      </div>
+    </section>
+
+    <section id="panel-read" class="mt-6 hidden" role="tabpanel">
+      <h2 class="text-lg font-medium mb-4">Read Contract</h2>
+      <div class="space-y-4 max-w-md">
+        <button onclick="readContract()" class="px-4 py-2 rounded shadow bg-slate-800 text-white hover:bg-slate-700">Call</button>
+        <div>
+          <label class="block text-sm font-medium mb-2">Output</label>
+          <pre id="read-output" class="bg-slate-50 border rounded p-3 text-sm min-h-24 overflow-auto">Click Call to read myNumber...</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-write" class="mt-6 hidden" role="tabpanel">
+      <h2 class="text-lg font-medium mb-4">Write Contract</h2>
+      <div class="space-y-4 max-w-md">
+        <div>
+          <label class="block text-sm font-medium mb-2">New Number</label>
+          <input id="write-number" class="border rounded px-3 py-2 w-full" type="number" placeholder="Enter new number" value="42" />
+        </div>
+        <button onclick="writeContract()" class="px-4 py-2 rounded shadow bg-slate-800 text-white hover:bg-slate-700">Change Number</button>
+      </div>
+    </section>
+
+    <div class="mt-8">
+      <h3 class="text-sm font-medium mb-2">Console</h3>
+      <pre id="console" class="bg-slate-50 border rounded p-3 text-sm max-h-64 overflow-auto">Ready.</pre>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching logic
+    const tabs = ['basic', 'send', 'read', 'write'];
+    
+    tabs.forEach(tab => {
+      document.getElementById(`tab-${tab}`).addEventListener('click', () => {
+        tabs.forEach(t => {
+          document.getElementById(`panel-${t}`).classList.add('hidden');
+          const tabEl = document.getElementById(`tab-${t}`);
+          tabEl.classList.remove('border-blue-500', 'text-blue-600');
+          tabEl.classList.add('border-transparent');
+        });
+        
+        document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        const activeTab = document.getElementById(`tab-${tab}`);
+        activeTab.classList.add('border-blue-500', 'text-blue-600');
+        activeTab.classList.remove('border-transparent');
+      });
+    });
+
+    function log(message) {
+      const consoleEl = document.getElementById('console');
+      const timestamp = new Date().toLocaleTimeString();
+      consoleEl.textContent += `\n[${timestamp}] ${message}`;
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    async function basicCall() {
+      const output = document.getElementById('basic-output');
+      
+      try {
+        log('Checking balance...');
+        output.textContent = 'Loading...';
+        
+        const response = await fetch('http://localhost:3000/api/checkBalance');
+        const data = await response.json();
+        
+        if (data.success) {
+          output.textContent = JSON.stringify({
+            address: data.address,
+            balanceWei: data.balanceWei,
+            balanceEth: data.balanceEth
+          }, null, 2);
+          log(`Balance: ${data.balanceEth} ETH`);
+        } else {
+          output.textContent = 'Error: ' + data.error;
+          log('Error: ' + data.error);
+        }
+      } catch (error) {
+        output.textContent = 'Error: ' + error.message;
+        log('Error: ' + error.message);
+      }
+    }
+
+    // Send ETH function
+    async function sendEth() {
+      const receiverAddress = document.getElementById('send-to').value;
+      const amount = document.getElementById('send-amount').value;
+      
+      if (!receiverAddress || !receiverAddress.startsWith('0x')) {
+        log('Error: Invalid receiver address');
+        alert('Please enter a valid Ethereum address');
+        return;
+      }
+      
+      if (!amount || parseFloat(amount) <= 0) {
+        log('Error: Invalid amount');
+        alert('Please enter a valid amount');
+        return;
+      }
+      
+      try {
+        log(`Sending ${amount} ETH to ${receiverAddress}...`);
+        
+        const response = await fetch('http://localhost:3000/api/sendEth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            receiverAddress: receiverAddress,
+            amount: amount
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          log(`Transaction successful! Hash: ${data.transactionHash}`);
+          log(`Sender balance: ${data.senderBalanceEth} ETH`);
+          log(`Receiver balance: ${data.receiverBalanceEth} ETH`);
+          alert(`Transaction sent!\nHash: ${data.transactionHash}`);
+        } else {
+          log('Error: ' + data.error);
+          alert('Transaction failed: ' + data.error);
+        }
+      } catch (error) {
+        log('Error: ' + error.message);
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Read Contract function
+    async function readContract() {
+      const output = document.getElementById('read-output');
+      
+      try {
+        log('Reading myNumber from contract...');
+        output.textContent = 'Loading...';
+        
+        const response = await fetch('http://localhost:3000/api/readContract');
+        const data = await response.json();
+        
+        if (data.success) {
+          output.textContent = JSON.stringify({
+            contractAddress: data.contractAddress,
+            myNumber: data.myNumber
+          }, null, 2);
+          log(`myNumber value: ${data.myNumber}`);
+        } else {
+          output.textContent = 'Error: ' + data.error;
+          log('Error: ' + data.error);
+        }
+      } catch (error) {
+        output.textContent = 'Error: ' + error.message;
+        log('Error: ' + error.message);
+      }
+    }
+
+    // Write Contract function
+    async function writeContract() {
+      const newNumber = document.getElementById('write-number').value;
+      
+      if (!newNumber) {
+        log('Error: Please enter a number');
+        alert('Please enter a number');
+        return;
+      }
+      
+      try {
+        log(`Setting myNumber to ${newNumber}...`);
+        
+        const response = await fetch('http://localhost:3000/api/writeContract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            newNumber: newNumber
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          log(`Transaction Hash: ${data.transactionHash}`);
+          log(`Previous value: ${data.previousValue}`);
+          log(`New value: ${data.newValue}`);
+          alert(`Number changed successfully!\nOld: ${data.previousValue}\nNew: ${data.newValue}\nTx: ${data.transactionHash}`);
+        } else {
+          log('Error: ' + data.error);
+          alert('Transaction failed: ' + data.error);
+        }
+      } catch (error) {
+        log('Error: ' + error.message);
+        alert('Error: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

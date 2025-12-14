@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Challenge04 Contract Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.10.0/web3.min.js"></script>
+        <style>
+
+    </style>
+</head>
+
+<!-- IPFS GATEWAY URL : https://ipfs.io/ipfs/bafkreiai735u7eevbcwwnmtobhnpm2ou7d4vdkc7emyxhqmxw6oqyanhsm -->
+
+<body>
+    <div class="container">
+        <h1>Challenge04 Contract Reader</h1>
+        <div class="contract-address">Contract: 0x3819C7071f2bc39C83187Bf5B5aeA79Fa3e37C42</div>
+        
+        <div id="status" class="status info">
+            Initializing Web3...
+        </div>
+        
+        <div class="button-group">
+            <button id="getAddressesBtn" disabled>
+                Get Registered Addresses
+            </button>
+        </div>
+        
+        <div class="input-group">
+            <label for="userAddress">User Address (for getData):</label>
+            <input 
+                type="text" 
+                id="userAddress" 
+                placeholder="0x..." 
+                disabled
+            />
+        </div>
+        
+        <button id="getDataBtn" disabled style="width: 100%; margin-bottom: 20px;">
+            Get Data for Address
+        </button>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = '0x3819C7071f2bc39C83187Bf5B5aeA79Fa3e37C42';
+        
+        // ABI derived from the contract
+        const CONTRACT_ABI = [
+            {
+                "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
+                "name": "getData",
+                "outputs": [{
+                    "components": [
+                        {"internalType": "bytes32", "name": "tx_challenge01", "type": "bytes32"},
+                        {"internalType": "bytes32", "name": "tx_challenge02", "type": "bytes32"},
+                        {"internalType": "address", "name": "contract_challenge03", "type": "address"},
+                        {"internalType": "address", "name": "contract_challenge04", "type": "address"}
+                    ],
+                    "internalType": "struct Challenge04.Data",
+                    "name": "",
+                    "type": "tuple"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getRegisteredAddresses",
+                "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        let web3;
+        let contract;
+        
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
+        const getAddressesBtn = document.getElementById('getAddressesBtn');
+        const getDataBtn = document.getElementById('getDataBtn');
+        const userAddressInput = document.getElementById('userAddress');
+
+        async function initWeb3() {
+            try {
+
+                if (typeof window.ethereum !== 'undefined') {
+                    
+                    web3 =  new Web3(window.ethereum);
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    statusDiv.textContent = 'Connected to MetaMask';
+                    contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                
+                getAddressesBtn.disabled = false;
+                getDataBtn.disabled = false;
+                userAddressInput.disabled = false;
+                } 
+                else{
+                    console.log("Nope")
+                }
+                
+  
+                
+            } catch (error) {
+                console.log(error)
+                statusDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function getRegisteredAddresses() {
+            try {
+                getAddressesBtn.disabled = true;
+                getAddressesBtn.innerHTML = '<span class="loading"></span>';
+                
+                const addresses = await contract.methods.getRegisteredAddresses().call();
+                
+                if (addresses.length === 0) {
+                    outputDiv.innerHTML = '<div class="output"><h3>Registered Addresses</h3><p>No addresses registered yet.</p></div>';
+                } else {
+                    let html = '<div class="output"><h3>Registered Addresses (' + addresses.length + ')</h3>';
+                    addresses.forEach((addr, index) => {
+                        html += '<div class="address-item">' + (index + 1) + '. ' + addr + '</div>';
+                    });
+                    html += '</div>';
+                    outputDiv.innerHTML = html;
+                }
+                
+                statusDiv.textContent = 'Successfully fetched ' + addresses.length + ' address(es)';
+                
+            } catch (error) {
+                statusDiv.textContent = 'Error: ' + error.message;
+            } finally {
+                getAddressesBtn.disabled = false;
+                getAddressesBtn.textContent = 'Get Registered Addresses';
+            }
+        }
+
+        async function getData() {
+            const address = userAddressInput.value.trim();
+            
+            if (!address) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '✗ Please enter a user address';
+                return;
+            }
+            
+            if (!web3.utils.isAddress(address)) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '✗ Invalid Ethereum address';
+                return;
+            }
+            
+            try {
+                getDataBtn.disabled = true;
+                getDataBtn.innerHTML = '<span class="loading"></span>';
+                
+                const data = await contract.methods.getData(address).call();
+                
+                let html = '<div class="output"><h3>Data for ' + address + '</h3>';
+                html += '<div class="data-item"><strong>TX Challenge 01:</strong> <span>' + data.tx_challenge01 + '</span></div>';
+                html += '<div class="data-item"><strong>TX Challenge 02:</strong> <span>' + data.tx_challenge02 + '</span></div>';
+                html += '<div class="data-item"><strong>Contract Challenge 03:</strong> <span>' + data.contract_challenge03 + '</span></div>';
+                html += '<div class="data-item"><strong>Contract Challenge 04:</strong> <span>' + data.contract_challenge04 + '</span></div>';
+                html += '</div>';
+                outputDiv.innerHTML = html;
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = 'Successfully fetched data for address';
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = 'Error: ' + error.message;
+                outputDiv.innerHTML = '<div class="output"><p>No data found for this address or error occurred.</p></div>';
+            } finally {
+                getDataBtn.disabled = false;
+                getDataBtn.textContent = 'Get Data for Address';
+            }
+        }
+
+        getAddressesBtn.addEventListener('click', getRegisteredAddresses);
+        getDataBtn.addEventListener('click', getData);
+        
+        userAddressInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                getData();
+            }
+        });
+
+        // Initialize on page load
+        initWeb3();
+    </script>
+</body>
+</html>
