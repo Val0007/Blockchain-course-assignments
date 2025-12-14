@@ -9,7 +9,7 @@ const PORT = 3000;
 
 const address = "0x3532EcFB809e338fF1599021BcD2a9E5B75F61e6";
 const web3 = new Web3("HTTP://127.0.0.1:7545");
-const pk = "0x596e7509080a3d2e23c5eff8012cfdcde6315e9b1ce141f224bffc2448d61ea0";
+const pk = "";
 const contractAddress = "0x6B1d7A2F11B998c77c8854C2dB0E26664A176a5A";
 
 app.use(express.json());
