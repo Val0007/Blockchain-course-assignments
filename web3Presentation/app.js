@@ -7,7 +7,7 @@ const address  = "0x3cBfC427dD445708bF31F3a4B37389fDe6440bFA"
 //THE ONLY PLACE WHERE you'll make a change to switch between different environments
 const web3 = new Web3("HTTP://127.0.0.1:7545")
 
-const pk = "0xc669eed456388bc57003e5450faf5fe049b9adbfbad657d88349a59a8f501dc8"
+const pk = ""
 
 async function checkBalance(account) {
     try {
@@ -27,7 +27,7 @@ async function sendEth(sender,receiver){
     	// sign and send the transaction
 
 
-        const privateKey = '0xc669eed456388bc57003e5450faf5fe049b9adbfbad657d88349a59a8f501dc8';
+        const privateKey = '';
         const account = web3.eth.accounts.privateKeyToAccount(privateKey);
         
         console.log('Private key:', privateKey);
